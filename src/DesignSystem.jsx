@@ -28,6 +28,17 @@ export function V2DesignSystemPanel() {
         }}>
           Warm paper, deep ink. Serif italic for human moments. Sans and mono for data. Hairlines, not borders.
         </p>
+        <a href="/compare.html" style={{
+          fontFamily: V2_FONT.sans, fontSize: 12,
+          color: V2.ink55, textDecoration: 'none',
+          letterSpacing: '-0.005em',
+          marginTop: 4,
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          alignSelf: 'flex-start',
+          padding: '6px 10px',
+          borderRadius: 999,
+          border: `1px solid ${V2.rule}`,
+        }}>Compare three eras ↗</a>
       </header>
 
       <Section label="Type">

@@ -30,7 +30,16 @@ function dnaScreenForLevel(level) {
 }
 
 export default function V2App() {
-  const [onboarded, setOnboarded] = React.useState(() => localStorage.getItem('phantom.v2.onboarded') === '1');
+  const search = typeof window !== 'undefined' ? window.location.search : '';
+  const isEmbed = /[?&]embed(=|&|$)/.test(search);
+  const levelOverride = (() => {
+    const m = search.match(/[?&]level=([^&]+)/);
+    const v = m && decodeURIComponent(m[1]);
+    return ['cold', 'warming', 'warm'].includes(v) ? v : null;
+  })();
+  const [onboarded, setOnboarded] = React.useState(() =>
+    isEmbed ? true : localStorage.getItem('phantom.v2.onboarded') === '1'
+  );
   const [onbStep, setOnbStep] = React.useState(0);
   const [screen, setScreen] = React.useState(() => localStorage.getItem('phantom.v2.screen') || 'main');
   const [tab, setTab] = React.useState(() => localStorage.getItem('phantom.v2.tab') || 'today');
@@ -38,7 +47,9 @@ export default function V2App() {
   const [dnaReferrer, setDnaReferrer] = React.useState(() => localStorage.getItem('phantom.v2.dnaReferrer') || 'patterns');
   const [patternKey, setPatternKey] = React.useState(() => localStorage.getItem('phantom.v2.patternKey') || 'fear');
   const [ghostId, setGhostId] = React.useState(() => localStorage.getItem('phantom.v2.ghostId') || 'apr22-msft');
-  const [demoLevel, setDemoLevel] = React.useState(() => localStorage.getItem('phantom.v2.demoLevel') || 'warm');
+  const [demoLevel, setDemoLevel] = React.useState(() =>
+    levelOverride || localStorage.getItem('phantom.v2.demoLevel') || 'warm'
+  );
   const [authDismissed, setAuthDismissed] = React.useState(() => localStorage.getItem('phantom.v2.authDismissed') === '1');
   const [sessionCount] = React.useState(() => {
     const prev = parseInt(localStorage.getItem('phantom.v2.sessionCount') || '0', 10);
@@ -63,7 +74,9 @@ export default function V2App() {
   React.useEffect(() => { localStorage.setItem('phantom.v2.dnaReferrer', dnaReferrer); }, [dnaReferrer]);
   React.useEffect(() => { localStorage.setItem('phantom.v2.patternKey', patternKey); }, [patternKey]);
   React.useEffect(() => { localStorage.setItem('phantom.v2.ghostId', ghostId); }, [ghostId]);
-  React.useEffect(() => { localStorage.setItem('phantom.v2.demoLevel', demoLevel); }, [demoLevel]);
+  React.useEffect(() => {
+    if (!isEmbed) localStorage.setItem('phantom.v2.demoLevel', demoLevel);
+  }, [demoLevel, isEmbed]);
   React.useEffect(() => { localStorage.setItem('phantom.v2.authDismissed', authDismissed ? '1' : '0'); }, [authDismissed]);
 
   const archiveGroups = React.useMemo(
@@ -177,29 +190,31 @@ export default function V2App() {
           maxWidth: 440, margin: '0 auto',
           display: 'flex', flexDirection: 'column', alignItems: 'center',
         }}>
-          <div style={{
-            padding: '4px 8px 12px', display: 'flex', gap: 6, flexWrap: 'wrap',
-            justifyContent: 'center', fontFamily: V2_FONT.sans,
-          }}>
-            <span style={{ fontSize: 12, color: V2.ink55, padding: '8px 4px' }}>
-              Onboarding · step {onbStep + 1} of 4
-            </span>
-            {[0,1,2,3].map(i => (
-              <button key={i} onClick={() => setOnbStep(i)} style={{
+          {!isEmbed && (
+            <div style={{
+              padding: '4px 8px 12px', display: 'flex', gap: 6, flexWrap: 'wrap',
+              justifyContent: 'center', fontFamily: V2_FONT.sans,
+            }}>
+              <span style={{ fontSize: 12, color: V2.ink55, padding: '8px 4px' }}>
+                Onboarding · step {onbStep + 1} of 4
+              </span>
+              {[0,1,2,3].map(i => (
+                <button key={i} onClick={() => setOnbStep(i)} style={{
+                  padding: '8px 12px', borderRadius: 10,
+                  border: `1px solid ${onbStep === i ? V2.ink : V2.ink15}`,
+                  background: onbStep === i ? V2.ink : V2.paper,
+                  color: onbStep === i ? V2.paper : V2.ink,
+                  fontSize: 12, cursor: 'pointer', fontFamily: V2_FONT.sans,
+                }}>{13 + i} · {['Cover','Concept','Seed','First ghost'][i]}</button>
+              ))}
+              <button onClick={() => { localStorage.setItem('phantom.v2.onboarded','1'); setOnboarded(true); setTab('today'); setScreen('main'); }} style={{
                 padding: '8px 12px', borderRadius: 10,
-                border: `1px solid ${onbStep === i ? V2.ink : V2.ink15}`,
-                background: onbStep === i ? V2.ink : V2.paper,
-                color: onbStep === i ? V2.paper : V2.ink,
+                border: `1px solid ${V2.ink15}`,
+                background: V2.paper, color: V2.ink55,
                 fontSize: 12, cursor: 'pointer', fontFamily: V2_FONT.sans,
-              }}>{13 + i} · {['Cover','Concept','Seed','First ghost'][i]}</button>
-            ))}
-            <button onClick={() => { localStorage.setItem('phantom.v2.onboarded','1'); setOnboarded(true); setTab('today'); setScreen('main'); }} style={{
-              padding: '8px 12px', borderRadius: 10,
-              border: `1px solid ${V2.ink15}`,
-              background: V2.paper, color: V2.ink55,
-              fontSize: 12, cursor: 'pointer', fontFamily: V2_FONT.sans,
-            }}>Skip to app</button>
-          </div>
+              }}>Skip to app</button>
+            </div>
+          )}
           <IOSDevice>
             <V2Paper>
               <div style={{ flex: 1, overflowY: 'auto', paddingTop: STATUS_BAR }}>
@@ -212,7 +227,7 @@ export default function V2App() {
             </V2Paper>
           </IOSDevice>
         </div>
-        <V2DesignSystemPanel/>
+        {!isEmbed && <V2DesignSystemPanel/>}
       </>
     );
   }
@@ -363,58 +378,62 @@ export default function V2App() {
       maxWidth: 440, margin: '0 auto',
       display: 'flex', flexDirection: 'column', alignItems: 'center',
     }}>
-      <div style={{
-        padding: '4px 8px 4px', display: 'flex', gap: 6, flexWrap: 'wrap',
-        justifyContent: 'center', fontFamily: V2_FONT.sans,
-        alignItems: 'center',
-      }}>
-        <span style={{ fontSize: 11, color: V2.ink55,
-          letterSpacing: '0.14em', textTransform: 'uppercase',
-          fontWeight: 500, padding: '8px 4px',
-        }}>State</span>
-        {levels.map(lv => (
-          <button key={lv.k} onClick={() => setDemoLevel(lv.k)} style={{
-            padding: '8px 12px', borderRadius: 10,
-            border: `1px solid ${demoLevel === lv.k ? V2.ink : V2.ink15}`,
-            background: demoLevel === lv.k ? V2.ink : V2.paper,
-            color: demoLevel === lv.k ? V2.paper : V2.ink,
-            fontSize: 12, cursor: 'pointer', fontFamily: V2_FONT.sans,
-          }}>{lv.l}</button>
-        ))}
-        <button onClick={resetOnboarding} style={{
-          padding: '8px 12px', borderRadius: 10,
-          border: `1px dashed ${V2.ink15}`,
-          background: 'transparent', color: V2.ink55,
-          fontSize: 12, cursor: 'pointer', fontFamily: V2_FONT.sans,
-        }}>Restart onboarding</button>
-        <button onClick={forceResolvePending} style={{
-          padding: '8px 12px', borderRadius: 10,
-          border: `1px dashed ${V2.ink15}`,
-          background: 'transparent', color: V2.ink55,
-          fontSize: 12, cursor: 'pointer', fontFamily: V2_FONT.sans,
-        }}>Resolve pending ({userGhosts.filter(g => g.outcome === 'pending').length})</button>
-      </div>
-      <div style={{
-        padding: '4px 8px 12px', display: 'flex', gap: 6, flexWrap: 'wrap',
-        justifyContent: 'center',
-        fontFamily: V2_FONT.sans,
-      }}>
-        {picker.map(p => (
-          <button key={p.k} onClick={() => pick(p.k)} style={{
-            padding: '8px 12px', borderRadius: 10,
-            border: `1px solid ${currentKey === p.k ? V2.ink : V2.ink15}`,
-            background: currentKey === p.k ? V2.ink : V2.paper,
-            color: currentKey === p.k ? V2.paper : V2.ink,
-            fontSize: 12, cursor: 'pointer',
+      {!isEmbed && (
+        <>
+          <div style={{
+            padding: '4px 8px 4px', display: 'flex', gap: 6, flexWrap: 'wrap',
+            justifyContent: 'center', fontFamily: V2_FONT.sans,
+            alignItems: 'center',
+          }}>
+            <span style={{ fontSize: 11, color: V2.ink55,
+              letterSpacing: '0.14em', textTransform: 'uppercase',
+              fontWeight: 500, padding: '8px 4px',
+            }}>State</span>
+            {levels.map(lv => (
+              <button key={lv.k} onClick={() => setDemoLevel(lv.k)} style={{
+                padding: '8px 12px', borderRadius: 10,
+                border: `1px solid ${demoLevel === lv.k ? V2.ink : V2.ink15}`,
+                background: demoLevel === lv.k ? V2.ink : V2.paper,
+                color: demoLevel === lv.k ? V2.paper : V2.ink,
+                fontSize: 12, cursor: 'pointer', fontFamily: V2_FONT.sans,
+              }}>{lv.l}</button>
+            ))}
+            <button onClick={resetOnboarding} style={{
+              padding: '8px 12px', borderRadius: 10,
+              border: `1px dashed ${V2.ink15}`,
+              background: 'transparent', color: V2.ink55,
+              fontSize: 12, cursor: 'pointer', fontFamily: V2_FONT.sans,
+            }}>Restart onboarding</button>
+            <button onClick={forceResolvePending} style={{
+              padding: '8px 12px', borderRadius: 10,
+              border: `1px dashed ${V2.ink15}`,
+              background: 'transparent', color: V2.ink55,
+              fontSize: 12, cursor: 'pointer', fontFamily: V2_FONT.sans,
+            }}>Resolve pending ({userGhosts.filter(g => g.outcome === 'pending').length})</button>
+          </div>
+          <div style={{
+            padding: '4px 8px 12px', display: 'flex', gap: 6, flexWrap: 'wrap',
+            justifyContent: 'center',
             fontFamily: V2_FONT.sans,
-          }}>{p.l}</button>
-        ))}
-      </div>
+          }}>
+            {picker.map(p => (
+              <button key={p.k} onClick={() => pick(p.k)} style={{
+                padding: '8px 12px', borderRadius: 10,
+                border: `1px solid ${currentKey === p.k ? V2.ink : V2.ink15}`,
+                background: currentKey === p.k ? V2.ink : V2.paper,
+                color: currentKey === p.k ? V2.paper : V2.ink,
+                fontSize: 12, cursor: 'pointer',
+                fontFamily: V2_FONT.sans,
+              }}>{p.l}</button>
+            ))}
+          </div>
+        </>
+      )}
       <IOSDevice dark={screen === 'followup'}>
         <V2Paper style={screen === 'followup' ? { background: V2.paperDark, color: V2.paper } : undefined}>{inner}</V2Paper>
       </IOSDevice>
     </div>
-    <V2DesignSystemPanel/>
+    {!isEmbed && <V2DesignSystemPanel/>}
     </>
   );
 }

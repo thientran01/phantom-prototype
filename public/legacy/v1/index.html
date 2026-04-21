@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Phantom — Prototype</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<style>
+  :root {
+    --purple: #3803B1;
+    --purple-grad: #7B61FF;
+    --lavender: #A49EF4;
+    --bg: #F8F8FA;
+    --white: #fff;
+    --text: #1A1A1F;
+    --text-2: #47474F;
+    --text-3: #8A8A96;
+    --text-4: #C5C5CD;
+    --border: #E5E5E5;
+    --card-bg: #F8F8FA;
+    --light-purple: #F1F0FB;
+    --tag-border: rgba(56,3,177,0.15);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro", system-ui, sans-serif;
+    background:
+      radial-gradient(ellipse at 15% 10%, rgba(164,158,244,0.28), transparent 55%),
+      radial-gradient(ellipse at 85% 90%, rgba(123,97,255,0.22), transparent 55%),
+      #EFEEF5;
+    min-height: 100vh;
+    color: var(--text);
+  }
+  .stage {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 16px 64px;
+    gap: 20px;
+  }
+  .caption {
+    text-align: center;
+    color: #2a2a3f;
+  }
+  .caption h1 {
+    font-size: 22px; font-weight: 700; margin: 0 0 4px;
+    letter-spacing: -0.2px;
+  }
+  .caption p {
+    font-size: 13px; color: #5b5b72; margin: 0;
+  }
+  .toolbar {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    padding: 8px;
+    background: rgba(255,255,255,0.65);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 16px;
+    max-width: 640px;
+    justify-content: center;
+    box-shadow: 0 8px 30px rgba(60,3,177,0.08);
+  }
+  .toolbar button {
+    font: inherit;
+    font-size: 12px; font-weight: 500;
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #3c3c4b;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .toolbar button:hover { background: rgba(56,3,177,0.06); }
+  .toolbar button.active {
+    background: var(--purple); color: white;
+    box-shadow: 0 2px 8px rgba(56,3,177,0.3);
+  }
+  #device-root {
+    transform-origin: top center;
+  }
+  @media (max-width: 500px) {
+    .stage { padding: 16px 8px 40px; gap: 12px; }
+    .toolbar { max-width: 100%; }
+    #device-root { transform: scale(0.88); margin-bottom: -110px; }
+  }
+  .foot {
+    font-size: 11px; color: #6a6a80; max-width: 420px; text-align: center; line-height: 1.5;
+  }
+  /* compare-view override: show only the phone frame */
+  .stage {
+    padding: 24px 16px 24px !important;
+    gap: 0 !important;
+    min-height: auto !important;
+  }
+  .caption, #toolbar-root, .foot { display: none !important; }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="caption">
+      <h1>Phantom</h1>
+      <p>Log the trades you didn't take · static prototype</p>
+    </div>
+    <div id="toolbar-root"></div>
+    <div id="device-root"></div>
+    <div class="foot">
+      Tap the buttons above or use the bottom tab bar / next buttons inside the phone to move between screens. This is a static prototype — no real data or network calls.
+    </div>
+  </div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="ios-frame.jsx"></script>
+<script type="text/babel" src="phantom-screens.jsx"></script>
+<script type="text/babel" src="phantom-dna.jsx"></script>
+<script type="text/babel" src="phantom-ghost-performance.jsx"></script>
+<script type="text/babel" src="phantom-ia.jsx"></script>
+<script type="text/babel" src="phantom-app.jsx"></script>
+</body>
+</html>
