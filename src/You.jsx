@@ -1,5 +1,5 @@
 import React from 'react';
-import { V2, V2_FONT, V2Meta, V2Display, V2Rule, V2Button, V2Tag, V2GhostMark } from './tokens.jsx';
+import { V2, V2_FONT, V2Meta, V2Display, V2Rule, V2Button, V2Tag } from './tokens.jsx';
 
 const V2_YOU_STATS = [
   { label: '47', sub: 'ghosts' },
@@ -8,10 +8,7 @@ const V2_YOU_STATS = [
   { label: '68%',   sub: 'held' },
 ];
 
-export function V2You({ onOpenStyle, onResetOnboarding, onExport, onSignOut, userGhosts = [], streak = 0, lastLogged = null }) {
-  const streakLine = streak >= 1
-    ? `${streak}-day streak`
-    : null;
+export function V2You({ onOpenStyle, onResetOnboarding, onExport, onSignOut, userGhosts = [] }) {
   return (
     <div style={{
       padding: '32px 28px 120px',
@@ -21,21 +18,6 @@ export function V2You({ onOpenStyle, onResetOnboarding, onExport, onSignOut, use
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         <V2Meta>You</V2Meta>
         <V2Display size={36} italic>Avery Chen</V2Display>
-        {streakLine ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <V2GhostMark mood="quiet" size={14}/>
-            <span style={{ fontSize: 13, color: V2.ink }}>{streakLine}</span>
-            <span style={{
-              fontFamily: V2_FONT.display, fontStyle: 'italic',
-              fontSize: 13, color: V2.ink55,
-            }}>last logged {lastLogged || 'recently'}</span>
-          </div>
-        ) : (
-          <div style={{
-            fontFamily: V2_FONT.display, fontStyle: 'italic',
-            fontSize: 13, color: V2.ink55,
-          }}>Start a streak — log a ghost today.</div>
-        )}
       </div>
 
       <div style={{
@@ -81,13 +63,6 @@ export function V2You({ onOpenStyle, onResetOnboarding, onExport, onSignOut, use
         <V2Rule />
       </div>
 
-      <div style={{
-        fontFamily: V2_FONT.display, fontStyle: 'italic',
-        fontSize: 14, color: V2.ink55, textAlign: 'center',
-        marginTop: 8, textWrap: 'balance',
-      }}>
-        "The trade you almost made is worth writing down."
-      </div>
     </div>
   );
 }

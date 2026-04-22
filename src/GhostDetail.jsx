@@ -1,6 +1,7 @@
 import React from 'react';
 import { V2, V2_FONT, V2Meta, V2Rule, V2Ticker, V2Tag, V2GhostMark } from './tokens.jsx';
 import { V2_ARCHIVE, allEntriesFlat, PATTERN_TAG_TO_KEY } from './Archive.jsx';
+import { V2EmotionMini, emotionQuadrantLabel } from './Emotion.jsx';
 
 const PATTERN_LINE = {
   'Fear of Loss':   'You exited to protect the gain. Sometimes the trade keeps going without you.',
@@ -25,7 +26,7 @@ function outcomeKey(outcome, isPositive) {
   return `${outcome}-${isPositive ? 'positive' : 'negative'}`;
 }
 
-export function V2GhostDetail({ ghostId, ghosts, overlay = {}, onUpdateOverlay, onBack, onOpenPattern, onOpenGhost }) {
+export function V2GhostDetail({ ghostId, ghosts, overlay = {}, onUpdateOverlay, onBack, onOpenPattern, onOpenGhost, onEditEmotion }) {
   const all = ghosts && ghosts.length ? ghosts : allEntriesFlat(V2_ARCHIVE);
   const entry = all.find(e => e.id === ghostId) || all[0];
   const isPending = entry.outcome === 'pending';
@@ -36,6 +37,7 @@ export function V2GhostDetail({ ghostId, ghosts, overlay = {}, onUpdateOverlay, 
   const notes = overlay.notes ?? entry.notes ?? '';
   const userTags = overlay.userTags ?? entry.userTags ?? [];
   const resolution = overlay.resolution ?? entry.resolution ?? null;
+  const emotion = overlay.emotion ?? entry.emotion ?? null;
 
   const [draftNotes, setDraftNotes] = React.useState(notes);
   React.useEffect(() => { setDraftNotes(notes); }, [ghostId, notes]);
@@ -182,7 +184,7 @@ export function V2GhostDetail({ ghostId, ghosts, overlay = {}, onUpdateOverlay, 
           <V2Meta>Your answer</V2Meta>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
             <span style={{ flexShrink: 0, paddingTop: 4 }}>
-              <V2GhostMark mood="tender"/>
+              <V2GhostMark mood="tender" interactive/>
             </span>
             <div style={{
               fontFamily: V2_FONT.display, fontStyle: 'italic',
@@ -194,6 +196,49 @@ export function V2GhostDetail({ ghostId, ghosts, overlay = {}, onUpdateOverlay, 
           </div>
         </section>
       )}
+
+      {emotion ? (
+        <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <V2Meta>How you felt</V2Meta>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <V2EmotionMini emotion={emotion}/>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <span style={{
+                fontFamily: V2_FONT.display, fontStyle: 'italic',
+                fontSize: 19, color: V2.ink, letterSpacing: '-0.005em',
+              }}>{emotionQuadrantLabel(emotion)}</span>
+              {onEditEmotion && (
+                <button onClick={() => onEditEmotion(entry.id)} style={{
+                  background: 'transparent', border: 'none', cursor: 'pointer',
+                  fontFamily: V2_FONT.sans, fontSize: 13, color: V2.ink55,
+                  padding: 0, alignSelf: 'flex-start',
+                  letterSpacing: '-0.005em',
+                }}>Edit →</button>
+              )}
+            </div>
+          </div>
+        </section>
+      ) : onEditEmotion && onUpdateOverlay ? (
+        <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <V2Meta>How you felt</V2Meta>
+          <button onClick={() => onEditEmotion(entry.id)} style={{
+            background: 'transparent',
+            border: `1px dashed ${V2.ink15}`,
+            borderRadius: 14,
+            padding: '16px 18px',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            cursor: 'pointer',
+            fontFamily: V2_FONT.sans,
+          }}>
+            <span style={{
+              fontFamily: V2_FONT.display, fontStyle: 'italic',
+              fontSize: 17, color: V2.ink70,
+              letterSpacing: '-0.005em',
+            }}>Add how it felt</span>
+            <span style={{ fontSize: 15, color: V2.ink35 }}>→</span>
+          </button>
+        </section>
+      ) : null}
 
       {onUpdateOverlay && (
         <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -284,13 +329,6 @@ export function V2GhostDetail({ ghostId, ghosts, overlay = {}, onUpdateOverlay, 
         </section>
       )}
 
-      <div style={{
-        fontFamily: V2_FONT.display, fontStyle: 'italic',
-        fontSize: 14, color: V2.ink55, textAlign: 'center',
-        marginTop: 8, textWrap: 'balance',
-      }}>
-        The trade you almost made is worth writing down.
-      </div>
     </div>
   );
 }

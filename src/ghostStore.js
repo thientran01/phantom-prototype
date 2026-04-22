@@ -37,7 +37,13 @@ export function saveLastResolvedSession(n) {
 export function applyOverlay(entry, overlays) {
   const o = overlays[entry.id];
   if (!o) return entry;
-  return { ...entry, notes: o.notes || '', userTags: o.userTags || [], resolution: o.resolution || null };
+  return {
+    ...entry,
+    notes: o.notes || '',
+    userTags: o.userTags || [],
+    resolution: o.resolution || null,
+    emotion: o.emotion || null,
+  };
 }
 
 function formatAgo(loggedAt, now) {
@@ -124,40 +130,8 @@ export function resolvePending(userGhosts, currentSession, lastResolvedSession) 
   return changed ? out : userGhosts;
 }
 
-export function computeStreak(userGhosts, now = Date.now()) {
-  if (!userGhosts.length) return 0;
-  const dayKey = (ms) => {
-    const d = new Date(ms);
-    return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-  };
-  const days = new Set(userGhosts.map(g => dayKey(g.loggedAt)));
-  let streak = 0;
-  const cursor = new Date(now);
-  while (true) {
-    const k = dayKey(cursor.getTime());
-    if (days.has(k)) {
-      streak += 1;
-      cursor.setDate(cursor.getDate() - 1);
-    } else if (streak === 0) {
-      cursor.setDate(cursor.getDate() - 1);
-      const yk = dayKey(cursor.getTime());
-      if (days.has(yk)) {
-        streak += 1;
-        cursor.setDate(cursor.getDate() - 1);
-      } else break;
-    } else break;
-  }
-  return streak;
-}
-
-export function lastLoggedAgo(userGhosts, now = Date.now()) {
-  if (!userGhosts.length) return null;
-  const latest = userGhosts.reduce((a, b) => (a.loggedAt > b.loggedAt ? a : b));
-  return formatAgo(latest.loggedAt, now);
-}
-
 export function ghostsToCSV(entries) {
-  const header = ['id','date','ticker','direction','size','outcome','delta','tag','text','notes','userTags','resolution'];
+  const header = ['id','date','ticker','direction','size','outcome','delta','tag','text','notes','userTags','resolution','valence','arousal'];
   const esc = (v) => {
     if (v == null) return '';
     const s = String(v);
@@ -165,7 +139,9 @@ export function ghostsToCSV(entries) {
   };
   const rows = entries.map(e => [
     e.id, e.d, e.ticker, e.dir, e.size, e.outcome, e.delta || '', e.tag,
-    e.text || '', e.notes || '', (e.userTags || []).join('|'), e.resolution || ''
+    e.text || '', e.notes || '', (e.userTags || []).join('|'), e.resolution || '',
+    e.emotion ? e.emotion.valence.toFixed(3) : '',
+    e.emotion ? e.emotion.arousal.toFixed(3) : '',
   ].map(esc).join(','));
   return [header.join(','), ...rows].join('\n');
 }

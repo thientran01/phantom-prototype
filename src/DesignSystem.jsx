@@ -1,5 +1,6 @@
 import React from 'react';
 import { V2, V2_FONT, V2Meta, V2Rule, V2Button, V2Tag, V2Ticker, V2Spectrum, V2GhostMark } from './tokens.jsx';
+import { V2EmotionMini } from './Emotion.jsx';
 
 export function V2DesignSystemPanel() {
   return (
@@ -26,7 +27,7 @@ export function V2DesignSystemPanel() {
           fontFamily: V2_FONT.display, fontSize: 14, lineHeight: 1.55,
           color: V2.ink70, margin: 0, textWrap: 'pretty',
         }}>
-          Warm paper, deep ink. Serif italic for human moments. Sans and mono for data. Hairlines, not borders.
+          Serif italic for stuff users do. Sans and mono for data.
         </p>
         <a href="/compare.html" style={{
           fontFamily: V2_FONT.sans, fontSize: 12,
@@ -38,7 +39,7 @@ export function V2DesignSystemPanel() {
           padding: '6px 10px',
           borderRadius: 999,
           border: `1px solid ${V2.rule}`,
-        }}>Compare three eras ↗</a>
+        }}>Compare MVP ↗</a>
       </header>
 
       <Section label="Type">
@@ -74,32 +75,32 @@ export function V2DesignSystemPanel() {
 
       <Section label="Color">
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-          <Swatch color={V2.paper}     name="Paper"      hex="#FAF6EE" border/>
-          <Swatch color={V2.paperDeep} name="Paper deep" hex="#F2ECDE" border/>
-          <Swatch color={V2.ink}       name="Ink"        hex="#1A1714" light/>
-          <Swatch color={V2.paperDark} name="Paper dark" hex="#1A1714" light/>
-          <Swatch color={V2.indigo}    name="Indigo"     hex="#2B2B6E" light/>
-          <Swatch color={V2.mossInk}   name="Moss"       hex="#2A4A34" light/>
-          <Swatch color={V2.emberInk}  name="Ember"      hex="#8A3E1D" light/>
-          <Swatch color={V2.rule}      name="Rule"       hex="#E8E1D2" border/>
+          <Swatch color={V2.paper} name="Paper" hex="#FAF6EE" border />
+          <Swatch color={V2.paperDeep} name="Paper deep" hex="#F2ECDE" border />
+          <Swatch color={V2.ink} name="Ink" hex="#1A1714" light />
+          <Swatch color={V2.paperDark} name="Paper dark" hex="#1A1714" light />
+          <Swatch color={V2.indigo} name="Indigo" hex="#2B2B6E" light />
+          <Swatch color={V2.mossInk} name="Moss" hex="#2A4A34" light />
+          <Swatch color={V2.emberInk} name="Ember" hex="#8A3E1D" light />
+          <Swatch color={V2.rule} name="Rule" hex="#E8E1D2" border />
         </div>
       </Section>
 
       <Section label="Ink opacities">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-          <V2Rule/>
-          <InkRow label="ink"   value="100%" color={V2.ink}/>
-          <V2Rule/>
-          <InkRow label="ink85" value="85%"  color={V2.ink85}/>
-          <V2Rule/>
-          <InkRow label="ink70" value="70%"  color={V2.ink70}/>
-          <V2Rule/>
-          <InkRow label="ink55" value="55%"  color={V2.ink55}/>
-          <V2Rule/>
-          <InkRow label="ink35" value="35%"  color={V2.ink35}/>
-          <V2Rule/>
-          <InkRow label="ink15" value="15%"  color={V2.ink15}/>
-          <V2Rule/>
+          <V2Rule />
+          <InkRow label="ink" value="100%" color={V2.ink} />
+          <V2Rule />
+          <InkRow label="ink85" value="85%" color={V2.ink85} />
+          <V2Rule />
+          <InkRow label="ink70" value="70%" color={V2.ink70} />
+          <V2Rule />
+          <InkRow label="ink55" value="55%" color={V2.ink55} />
+          <V2Rule />
+          <InkRow label="ink35" value="35%" color={V2.ink35} />
+          <V2Rule />
+          <InkRow label="ink15" value="15%" color={V2.ink15} />
+          <V2Rule />
         </div>
       </Section>
 
@@ -160,19 +161,49 @@ export function V2DesignSystemPanel() {
         </div>
       </Section>
 
-      <Section label="Mark">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-          <V2GhostMark size={22}/>
-          <V2GhostMark size={28} color={V2.ink}/>
-          <V2GhostMark size={40} color={V2.ink35}/>
+      <Section label="Mascot">
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
+          alignItems: 'end', gap: 8,
+        }}>
+          {['quiet', 'waiting', 'tender', 'hero'].map(m => (
+            <div key={m} style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+              minHeight: 78, justifyContent: 'flex-end',
+            }}>
+              <V2GhostMark mood={m} />
+              <span style={{
+                fontFamily: V2_FONT.mono, fontSize: 10,
+                color: V2.ink55, letterSpacing: '0.04em',
+              }}>{m}</span>
+            </div>
+          ))}
         </div>
         <div style={{ fontSize: 12, color: V2.ink55, marginTop: 4, lineHeight: 1.5 }}>
-          Hairline silhouette, faceless. Domed top, four-scallop hem. Use at <code style={{ fontFamily: V2_FONT.mono }}>ink55</code> for quiet corners, <code style={{ fontFamily: V2_FONT.mono }}>ink</code> for a mark.
+          Hairline silhouette, faceless. Ember by default. Quiet sits in corners, waiting rides the "a ghost is ready" card, tender reads on confession beats, hero anchors the cover.
+        </div>
+      </Section>
+
+      <Section label="Emotion compass">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <V2EmotionMini emotion={{ valence: 0.6, arousal: 0.5 }} size={96} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <V2Meta>High stress · Greed</V2Meta>
+            <span style={{
+              fontFamily: V2_FONT.display, fontStyle: 'italic',
+              fontSize: 14, color: V2.ink70, lineHeight: 1.4,
+            }}>
+              Valence × arousal, −1 to 1.
+            </span>
+          </div>
+        </div>
+        <div style={{ fontSize: 12, color: V2.ink55, marginTop: 4, lineHeight: 1.5 }}>
+          Fear ↔ Greed on x, Calm ↔ High stress on y. Ember dot at the placed point. Post-log, skippable. Read-only mini in Ghost detail.
         </div>
       </Section>
 
       <Section label="Hairline">
-        <V2Rule/>
+        <V2Rule />
         <div style={{ fontSize: 12, color: V2.ink55, marginTop: 8 }}>
           1px in <code style={{ fontFamily: V2_FONT.mono }}>V2.rule</code> — used everywhere a border would be.
         </div>
@@ -196,7 +227,7 @@ export function V2DesignSystemPanel() {
             tag="Patterns · thin"
             headline="Patterns take a minute."
             sub="2 / 5"
-            progress={2/5}
+            progress={2 / 5}
           />
           <EmptyThumb
             tag="Archive · empty"
@@ -227,7 +258,7 @@ export function V2DesignSystemPanel() {
               <span style={{
                 fontFamily: V2_FONT.mono, fontSize: 10, color: V2.ink35,
                 minWidth: 18, letterSpacing: '0.04em',
-              }}>0{i+1}</span>
+              }}>0{i + 1}</span>
               <span style={{
                 fontFamily: V2_FONT.display, fontSize: 14, lineHeight: 1.5,
                 color: V2.ink70,
@@ -307,7 +338,7 @@ function EmptyThumb({ tag, headline, sub, progress }) {
         }}>
           <div style={{
             width: `${Math.min(100, progress * 100)}%`, height: '100%', background: V2.ink,
-          }}/>
+          }} />
         </div>
       ) : null}
       <span style={{
@@ -331,7 +362,7 @@ function InkRow({ label, value, color }) {
         <span style={{
           width: 60, height: 16, borderRadius: 4,
           background: color, border: `1px solid ${V2.rule}`,
-        }}/>
+        }} />
       </span>
     </div>
   );

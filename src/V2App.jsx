@@ -1,6 +1,6 @@
 import React from 'react';
 import { IOSDevice } from './iosFrame.jsx';
-import { V2, V2_FONT, V2Paper } from './tokens.jsx';
+import { V2, V2_FONT, V2Paper, emitGhostEvent } from './tokens.jsx';
 import { V2BottomBar } from './BottomBar.jsx';
 import { V2Today } from './Today.jsx';
 import { V2Compose } from './Compose.jsx';
@@ -13,11 +13,12 @@ import { V2DesignSystemPanel } from './DesignSystem.jsx';
 import { V2Onboarding } from './Onboarding.jsx';
 import { V2PatternDetail } from './PatternDetail.jsx';
 import { V2GhostDetail } from './GhostDetail.jsx';
+import { V2Emotion } from './Emotion.jsx';
 import {
   loadUserGhosts, saveUserGhosts,
   loadOverlays, saveOverlays,
   loadLastResolvedSession, saveLastResolvedSession,
-  parsedToGhost, resolvePending, computeStreak, lastLoggedAgo,
+  parsedToGhost, resolvePending,
   ghostsToCSV, downloadCSV, mergeArchive, flattenArchive,
 } from './ghostStore.js';
 
@@ -44,9 +45,12 @@ export default function V2App() {
   const [screen, setScreen] = React.useState(() => localStorage.getItem('phantom.v2.screen') || 'main');
   const [tab, setTab] = React.useState(() => localStorage.getItem('phantom.v2.tab') || 'today');
   const [dnaAxis, setDnaAxis] = React.useState(() => localStorage.getItem('phantom.v2.dnaAxis') || 'tempo');
+  const [dnaArchetypeCode, setDnaArchetypeCode] = React.useState(null);
   const [dnaReferrer, setDnaReferrer] = React.useState(() => localStorage.getItem('phantom.v2.dnaReferrer') || 'patterns');
   const [patternKey, setPatternKey] = React.useState(() => localStorage.getItem('phantom.v2.patternKey') || 'fear');
   const [ghostId, setGhostId] = React.useState(() => localStorage.getItem('phantom.v2.ghostId') || 'apr22-msft');
+  const [emotionGhostId, setEmotionGhostId] = React.useState(null);
+  const [emotionSource, setEmotionSource] = React.useState('compose');
   const [demoLevel, setDemoLevel] = React.useState(() =>
     levelOverride || localStorage.getItem('phantom.v2.demoLevel') || 'warm'
   );
@@ -71,6 +75,10 @@ export default function V2App() {
   React.useEffect(() => { localStorage.setItem('phantom.v2.screen', screen); }, [screen]);
   React.useEffect(() => { localStorage.setItem('phantom.v2.tab', tab); }, [tab]);
   React.useEffect(() => { localStorage.setItem('phantom.v2.dnaAxis', dnaAxis); }, [dnaAxis]);
+  React.useEffect(() => {
+    // Clear any twin override when leaving the archetype screen.
+    if (screen !== 'dna-archetype' && dnaArchetypeCode) setDnaArchetypeCode(null);
+  }, [screen, dnaArchetypeCode]);
   React.useEffect(() => { localStorage.setItem('phantom.v2.dnaReferrer', dnaReferrer); }, [dnaReferrer]);
   React.useEffect(() => { localStorage.setItem('phantom.v2.patternKey', patternKey); }, [patternKey]);
   React.useEffect(() => { localStorage.setItem('phantom.v2.ghostId', ghostId); }, [ghostId]);
@@ -120,6 +128,8 @@ export default function V2App() {
       saveUserGhosts(next);
       return next;
     });
+    // Let any visible ghost mark hop in acknowledgement.
+    requestAnimationFrame(() => emitGhostEvent('saved'));
     return ghost.id;
   }, [sessionCount]);
 
@@ -136,6 +146,9 @@ export default function V2App() {
     setUserGhosts(prev => {
       const next = resolvePending(prev, sessionCount + 1, sessionCount);
       saveUserGhosts(next);
+      if (next !== prev) {
+        requestAnimationFrame(() => emitGhostEvent('resolved'));
+      }
       return next;
     });
   }, [sessionCount]);
@@ -221,7 +234,6 @@ export default function V2App() {
                 <V2Onboarding
                   startStep={onbStep}
                   onDone={finishOnboarding}
-                  onSetSeed={() => {}}
                 />
               </div>
             </V2Paper>
@@ -238,8 +250,38 @@ export default function V2App() {
   if (screen === 'compose') {
     inner = <div style={{ flex: 1, overflowY: 'auto', paddingTop: STATUS_BAR }}><V2Compose
       onCancel={() => setScreen('main')}
-      onSave={(parsed, text) => { saveGhost(parsed, text); setTab('today'); setScreen('main'); }}
+      onSave={(parsed, text) => {
+        const id = saveGhost(parsed, text);
+        setEmotionGhostId(id);
+        setEmotionSource('compose');
+        setScreen('emotion');
+      }}
     /></div>;
+  } else if (screen === 'emotion') {
+    const existing = overlays[emotionGhostId] && overlays[emotionGhostId].emotion;
+    const returnHome = () => {
+      setEmotionGhostId(null);
+      if (emotionSource === 'detail') {
+        setGhostId(emotionGhostId);
+        setScreen('ghost');
+      } else {
+        setTab('today');
+        setScreen('main');
+      }
+    };
+    inner = <div style={{ flex: 1, overflowY: 'auto', paddingTop: STATUS_BAR }}>
+      <V2Emotion
+        ghostId={emotionGhostId}
+        initialEmotion={existing || null}
+        mode={emotionSource === 'detail' ? 'edit' : 'post-log'}
+        onSave={(emotion) => {
+          if (emotionGhostId) updateOverlay(emotionGhostId, { emotion });
+          returnHome();
+        }}
+        onSkip={returnHome}
+        onBack={returnHome}
+      />
+    </div>;
   } else if (screen === 'followup') {
     const followupTargetId = resolvedUserGhost ? resolvedUserGhost.id : null;
     inner = <div style={{ flex: 1, overflowY: 'auto', paddingTop: STATUS_BAR, background: V2.paperDark }}><V2Followup
@@ -270,13 +312,26 @@ export default function V2App() {
         onBack={() => { setTab('archive'); setScreen('main'); }}
         onOpenPattern={(k) => { setPatternKey(k); setScreen('pattern'); }}
         onOpenGhost={(id) => { setGhostId(id); setScreen('ghost'); }}
+        onEditEmotion={(id) => {
+          setEmotionGhostId(id);
+          setEmotionSource('detail');
+          setScreen('emotion');
+        }}
       />
     </div>;
   } else if (isDNA) {
     let dnaContent;
     if (screen === 'dna-locked')   dnaContent = <V2DNALocked onBack={closeDNA}/>;
     else if (screen === 'dna-forming')  dnaContent = <V2DNAForming onBack={closeDNA} onOpenRevealed={() => setScreen('dna-revealed')}/>;
-    else if (screen === 'dna-archetype') dnaContent = <V2DNAArchetype onBack={() => setScreen('dna-revealed')} onOpenAxis={(k) => { setDnaAxis(k); setScreen('dna-axis'); }}/>;
+    else if (screen === 'dna-archetype') dnaContent = <V2DNAArchetype
+      code={dnaArchetypeCode}
+      onBack={() => {
+        if (dnaArchetypeCode) setDnaArchetypeCode(null);
+        else setScreen('dna-revealed');
+      }}
+      onOpenAxis={(k) => { setDnaAxis(k); setScreen('dna-axis'); }}
+      onOpenArchetypeCode={(twinCode) => setDnaArchetypeCode(twinCode)}
+    />;
     else if (screen === 'dna-axis') dnaContent = <V2DNAAxis axisKey={dnaAxis} onBack={() => setScreen('dna-revealed')} onOpenArchetype={() => setScreen('dna-archetype')}/>;
     else dnaContent = <V2DNARevealed
       onBack={closeDNA}
@@ -314,8 +369,6 @@ export default function V2App() {
     />;
     else                         content = <V2You
       userGhosts={userGhosts}
-      streak={computeStreak(userGhosts)}
-      lastLogged={lastLoggedAgo(userGhosts)}
       onOpenStyle={goStyle}
       onResetOnboarding={resetOnboarding}
       onExport={exportJournal}
@@ -346,6 +399,7 @@ export default function V2App() {
     { k: 'dna-axis',      l: '12 · DNA · Axis detail' },
     { k: 'pattern',       l: '13 · Pattern · Detail' },
     { k: 'ghost',         l: '14 · Ghost · Detail'   },
+    { k: 'emotion',       l: '15 · Emotion · Compass' },
   ];
   const currentKey =
     screen === 'compose'   ? 'compose' :
@@ -353,6 +407,7 @@ export default function V2App() {
     screen === 'style'     ? 'style' :
     screen === 'pattern'   ? 'pattern' :
     screen === 'ghost'     ? 'ghost' :
+    screen === 'emotion'   ? 'emotion' :
     isDNA                  ? screen :
     tab;
 
@@ -362,6 +417,14 @@ export default function V2App() {
     else if (k === 'style')    setScreen('style');
     else if (k === 'pattern')  setScreen('pattern');
     else if (k === 'ghost')    setScreen('ghost');
+    else if (k === 'emotion') {
+      const latest = [...userGhosts].sort((a, b) => b.loggedAt - a.loggedAt)[0];
+      const targetId = latest ? latest.id : (allGhosts[0] && allGhosts[0].id) || null;
+      if (!targetId) return;
+      setEmotionGhostId(targetId);
+      setEmotionSource('detail');
+      setScreen('emotion');
+    }
     else if (k.startsWith('dna-')) { setDnaReferrer('patterns'); setScreen(k); }
     else { setScreen('main'); setTab(k); }
   };

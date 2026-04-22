@@ -80,58 +80,171 @@ export function V2Rule({ style }) {
 }
 
 const GHOST_MOOD_PRESETS = {
-  quiet:    { size: 22, color: V2.ink55, rotate: 0,  stroke: 1.25 },
-  speaking: { size: 20, color: V2.ink,   rotate: 0,  stroke: 1.3  },
-  waiting:  { size: 22, color: V2.ink55, rotate: -5, stroke: 1.25 },
-  tender:   { size: 30, color: V2.ink,   rotate: 0,  stroke: 1.35 },
-  hero:     { size: 56, color: V2.ink,   rotate: 0,  stroke: 1.5  },
+  quiet:   { size: 22, color: V2.emberInk, rotate: 0, stroke: 1.5  },
+  waiting: { size: 22, color: V2.emberInk, rotate: 0, stroke: 1.5  },
+  tender:  { size: 30, color: V2.emberInk, rotate: 0, stroke: 1.6  },
+  hero:    { size: 56, color: V2.emberInk, rotate: 0, stroke: 1.75 },
 };
 
-export function V2GhostMark({ size, color, strokeWidth, mood = 'quiet', style, title = 'Phantom' }) {
+const GHOST_MARK_CSS = `
+.v2-ghost-mark {
+  display: inline-flex;
+  line-height: 0;
+  transition: transform 160ms ease;
+  will-change: transform;
+  transform-origin: 50% 70%;
+}
+.v2-ghost-mark:hover {
+  transform: scale(1.08) rotate(3deg) !important;
+}
+.v2-ghost-mark:active {
+  transform: translateY(-3px) scale(1.05) !important;
+  transition-duration: 100ms;
+}
+.v2-ghost-mark.v2-ghost-entry {
+  animation: v2-ghost-entry 260ms ease-out both;
+}
+.v2-ghost-mark.v2-ghost-hop {
+  animation: v2-ghost-hop 520ms ease-out;
+}
+.v2-ghost-mark.v2-ghost-nod {
+  animation: v2-ghost-nod 700ms ease-in-out;
+}
+@keyframes v2-ghost-entry {
+  from { opacity: 0; transform: scale(0.88); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes v2-ghost-hop {
+  0%   { transform: none; }
+  35%  { transform: translateY(-7px) scale(1.08); }
+  65%  { transform: translateY(2px) scale(0.97); }
+  100% { transform: none; }
+}
+@keyframes v2-ghost-nod {
+  0%, 100% { transform: none; }
+  30%      { transform: rotate(5deg) translateY(-1px); }
+  65%      { transform: rotate(-3deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .v2-ghost-mark,
+  .v2-ghost-mark.v2-ghost-entry,
+  .v2-ghost-mark.v2-ghost-hop,
+  .v2-ghost-mark.v2-ghost-nod {
+    animation: none !important;
+    transition: none !important;
+  }
+  .v2-ghost-mark:hover,
+  .v2-ghost-mark:active {
+    transform: none !important;
+  }
+}
+`;
+
+export function emitGhostEvent(name) {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(`phantom:${name}`));
+  }
+}
+
+if (typeof document !== 'undefined' && !document.getElementById('v2-ghost-mark-styles')) {
+  const el = document.createElement('style');
+  el.id = 'v2-ghost-mark-styles';
+  el.textContent = GHOST_MARK_CSS;
+  document.head.appendChild(el);
+}
+
+export function V2GhostMark({ size, color, strokeWidth, mood = 'quiet', interactive = false, style, title = 'Phantom' }) {
   const preset = GHOST_MOOD_PRESETS[mood] || GHOST_MOOD_PRESETS.quiet;
   const s = size ?? preset.size;
   const c = color ?? preset.color;
   const w = strokeWidth ?? preset.stroke;
-  return (
-    <svg
-      role="img"
-      aria-label={title}
-      width={s}
-      height={s * (24 / 22)}
-      viewBox="0 0 22 24"
-      fill="none"
-      stroke={c}
-      strokeWidth={w}
-      strokeLinejoin="round"
-      strokeLinecap="round"
-      style={{
-        display: 'block',
-        transform: preset.rotate ? `rotate(${preset.rotate}deg)` : undefined,
-        transformOrigin: '50% 60%',
-        ...style,
-      }}
-    >
-      <path d="M3 11 A8 8 0 0 1 19 11 L19 20 Q17 23.5 15 20 Q13 23.5 11 20 Q9 23.5 7 20 Q5 23.5 3 20 Z"/>
-    </svg>
-  );
-}
 
-export function V2PhantomSays({ children, mood = 'speaking', align = 'start', style }) {
+  const spanRef = React.useRef(null);
+  const svgRef = React.useRef(null);
+  const [cursorTilt, setCursorTilt] = React.useState(0);
+
+  React.useEffect(() => {
+    if (!interactive) return undefined;
+    let raf = 0;
+    let pending = null;
+    const handler = (e) => {
+      pending = e;
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        const evt = pending;
+        if (!evt || !svgRef.current) return;
+        const rect = svgRef.current.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        const dx = evt.clientX - cx;
+        const dy = evt.clientY - cy;
+        const dist = Math.hypot(dx, dy);
+        const maxReach = 520;
+        if (dist > maxReach) { setCursorTilt(0); return; }
+        const falloff = Math.max(0, 1 - dist / maxReach);
+        const tilt = Math.max(-6, Math.min(6, (dx / 28) * falloff));
+        setCursorTilt(tilt);
+      });
+    };
+    window.addEventListener('mousemove', handler);
+    return () => {
+      window.removeEventListener('mousemove', handler);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [interactive]);
+
+  // Event-driven reactions: hop on save, nod on resolve.
+  React.useEffect(() => {
+    const el = spanRef.current;
+    if (!el) return undefined;
+    const playOnce = (cls) => {
+      el.classList.remove(cls);
+      void el.offsetWidth; // restart animation
+      el.classList.add(cls);
+    };
+    const onSaved = () => playOnce('v2-ghost-hop');
+    const onResolved = () => playOnce('v2-ghost-nod');
+    const onAnimEnd = (e) => {
+      if (e.animationName === 'v2-ghost-hop') el.classList.remove('v2-ghost-hop');
+      if (e.animationName === 'v2-ghost-nod') el.classList.remove('v2-ghost-nod');
+    };
+    window.addEventListener('phantom:saved', onSaved);
+    window.addEventListener('phantom:resolved', onResolved);
+    el.addEventListener('animationend', onAnimEnd);
+    return () => {
+      window.removeEventListener('phantom:saved', onSaved);
+      window.removeEventListener('phantom:resolved', onResolved);
+      el.removeEventListener('animationend', onAnimEnd);
+    };
+  }, []);
+
+  const innerRotate = (preset.rotate || 0) + cursorTilt;
+
   return (
-    <div style={{
-      display: 'flex', alignItems: 'flex-start', gap: 10,
-      justifyContent: align === 'center' ? 'center' : 'flex-start',
-      ...style,
-    }}>
-      <span style={{ flexShrink: 0, paddingTop: 3 }}>
-        <V2GhostMark mood={mood}/>
-      </span>
-      <span style={{
-        fontFamily: V2_FONT.display, fontStyle: 'italic',
-        fontSize: 15, lineHeight: 1.5, color: V2.ink70,
-        textWrap: 'pretty', maxWidth: 320,
-      }}>{children}</span>
-    </div>
+    <span ref={spanRef} className="v2-ghost-mark v2-ghost-entry" style={style}>
+      <svg
+        ref={svgRef}
+        role="img"
+        aria-label={title}
+        width={s}
+        height={s * (24 / 22)}
+        viewBox="0 0 22 24"
+        fill="none"
+        stroke={c}
+        strokeWidth={w}
+        strokeLinejoin="round"
+        strokeLinecap="round"
+        style={{
+          display: 'block',
+          transform: innerRotate ? `rotate(${innerRotate}deg)` : undefined,
+          transformOrigin: '50% 60%',
+          transition: interactive ? 'transform 120ms ease-out' : undefined,
+        }}
+      >
+        <path d="M3 11 A8 8 0 0 1 19 11 L19 20 Q17 23.5 15 20 Q13 23.5 11 20 Q9 23.5 7 20 Q5 23.5 3 20 Z"/>
+      </svg>
+    </span>
   );
 }
 
@@ -172,13 +285,13 @@ export function V2Button({ children, onClick, variant = 'primary', full, style }
   );
 }
 
-export function V2Spectrum({ leftLabel, rightLabel, leftLetter, rightLetter, position, activeSide = 'left', dark = false }) {
+export function V2Spectrum({ leftLabel, rightLabel, leftLetter, rightLetter, position, activeSide = 'left' }) {
   const pct = Math.max(4, Math.min(96, position));
-  const inkColor = dark ? 'rgba(250,246,238,0.92)' : V2.ink;
-  const metaColor = dark ? 'rgba(250,246,238,0.55)' : V2.ink55;
-  const trackColor = dark ? 'rgba(250,246,238,0.15)' : V2.rule;
-  const fillColor = dark ? '#E7A57A' : V2.indigo;
-  const dotBg = dark ? V2.paper : V2.paper;
+  const inkColor = V2.ink;
+  const metaColor = V2.ink55;
+  const trackColor = V2.rule;
+  const fillColor = V2.indigo;
+  const dotBg = V2.paper;
   const activeLetter = activeSide === 'left' ? leftLetter : rightLetter;
   const leftWeight = activeSide === 'left' ? 600 : 400;
   const rightWeight = activeSide === 'right' ? 600 : 400;
@@ -212,14 +325,14 @@ export function V2Spectrum({ leftLabel, rightLabel, leftLetter, rightLetter, pos
         }}/>
         <div style={{
           position: 'absolute', top: '50%',
-          left: `calc(${pct}% - 14px)`,
+          left: `calc(${pct}% - 11px)`,
           transform: 'translateY(-50%)',
-          width: 28, height: 28,
+          width: 22, height: 22,
           borderRadius: 999,
           background: dotBg,
           border: `1.5px solid ${fillColor}`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontFamily: V2_FONT.mono, fontSize: 12, fontWeight: 600,
+          fontFamily: V2_FONT.mono, fontSize: 11, fontWeight: 600,
           color: fillColor,
         }}>{activeLetter}</div>
       </div>

@@ -293,28 +293,3 @@ export const USER_DNA = {
   },
 };
 
-export const SEED_OPTIONS = [
-  { key: 'hesitate',  label: 'I hesitate too much',         sub: 'I see the setup and I wait too long.' },
-  { key: 'chase',     label: 'I chase too fast',            sub: 'I jump in once the room starts shouting.' },
-  { key: 'overthink', label: 'I overthink',                 sub: 'I re-underwrite every thesis twice.' },
-  { key: 'follow',    label: "I don't trust my own read",   sub: 'I wait for someone else to go first.' },
-];
-
-export function seedToScores(seedKey) {
-  const base = { tempo: 50, drive: 50, mood: 50, signal: 50 };
-  switch (seedKey) {
-    case 'hesitate':  return { ...base, tempo: 25, drive: 30 };
-    case 'chase':     return { ...base, tempo: 75, drive: 70, mood: 62 };
-    case 'overthink': return { ...base, tempo: 20, mood: 60 };
-    case 'follow':    return { ...base, signal: 72, drive: 40 };
-    default:          return base;
-  }
-}
-
-export function resolveCode(scores) {
-  const letter = (k) => {
-    const axis = DNA_AXES.find(a => a.key === k);
-    return scores[k] < 50 ? axis.letters[0] : axis.letters[1];
-  };
-  return letter('tempo') + letter('drive') + letter('mood') + letter('signal');
-}

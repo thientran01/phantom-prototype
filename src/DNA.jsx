@@ -182,7 +182,7 @@ export function V2DNARevealed({ onBack, onOpenArchetype, onOpenAxis }) {
       display: 'flex', flexDirection: 'column', gap: 32,
       fontFamily: V2_FONT.sans,
     }}>
-      <Header onBack={onBack} label="Your DNA" trailing="locked"/>
+      <Header onBack={onBack} label="Your DNA"/>
 
       <div style={{
         display: 'flex', justifyContent: 'center', alignItems: 'baseline',
@@ -274,8 +274,8 @@ export function V2DNARevealed({ onBack, onOpenArchetype, onOpenAxis }) {
   );
 }
 
-export function V2DNAArchetype({ onBack, onOpenAxis, onOpenArchetypeCode }) {
-  const archetype = DNA_ARCHETYPES[USER_DNA.code];
+export function V2DNAArchetype({ onBack, onOpenAxis, onOpenArchetypeCode, code }) {
+  const archetype = DNA_ARCHETYPES[code || USER_DNA.code];
   const [filter, setFilter] = React.useState('essay');
 
   return (

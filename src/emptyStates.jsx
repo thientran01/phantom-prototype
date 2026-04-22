@@ -1,5 +1,5 @@
 import React from 'react';
-import { V2, V2_FONT, V2Meta, V2Display, V2Rule, V2Button, V2PhantomSays } from './tokens.jsx';
+import { V2, V2_FONT, V2Meta, V2Display, V2Rule, V2Button } from './tokens.jsx';
 
 function Frame({ children }) {
   return (
@@ -44,13 +44,10 @@ export function TodayEmpty({ onCompose }) {
         </Body>
       </div>
 
-      <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ marginTop: 8 }}>
         <V2Button variant="primary" full onClick={onCompose}>
           Log your first ghost
         </V2Button>
-        <V2PhantomSays align="center">
-          I'll be here when you're ready.
-        </V2PhantomSays>
       </div>
     </Frame>
   );
@@ -82,13 +79,10 @@ export function TodayQuiet({ ghostCount, onCompose, onOpenArchive }) {
         <V2Rule/>
       </div>
 
-      <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ marginTop: 8 }}>
         <V2Button variant="ghost" full onClick={onCompose}>
           Log another ghost
         </V2Button>
-        <V2PhantomSays align="center">
-          Quiet pages are still yours.
-        </V2PhantomSays>
       </div>
     </Frame>
   );
@@ -128,10 +122,6 @@ export function PatternsThin({ count, onCompose }) {
           Log another ghost
         </V2Button>
       </div>
-
-      <V2PhantomSays align="center" style={{ marginTop: 'auto' }}>
-        A single ghost is a story. Five is a shape.
-      </V2PhantomSays>
     </Frame>
   );
 }
@@ -148,13 +138,10 @@ export function ArchiveEmpty({ onCompose }) {
         This is where ghosts live once you write them down. Start with a trade you almost made this week.
       </Body>
 
-      <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ marginTop: 8 }}>
         <V2Button variant="primary" full onClick={onCompose}>
           Log a ghost
         </V2Button>
-        <V2PhantomSays align="center">
-          A blank page is fine by me.
-        </V2PhantomSays>
       </div>
     </Frame>
   );

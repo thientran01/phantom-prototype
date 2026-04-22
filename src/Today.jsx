@@ -157,20 +157,10 @@ export function V2Today({
         <V2Rule />
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 8 }}>
+      <div style={{ marginTop: 8 }}>
         <V2Button variant="primary" full onClick={onCompose}>
           Log a ghost
         </V2Button>
-        <div style={{
-          fontFamily: V2_FONT.display,
-          fontStyle: 'italic',
-          fontSize: 14,
-          color: V2.ink55,
-          textAlign: 'center',
-          textWrap: 'balance',
-        }}>
-          The trade you almost made is worth writing down.
-        </div>
       </div>
     </div>
   );
