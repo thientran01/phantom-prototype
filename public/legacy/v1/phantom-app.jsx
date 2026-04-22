@@ -1,293 +1,244 @@
-// phantom-app.jsx — Top-level app + toolbar + iOS device frame routing
+// phantom-app.jsx — top-level shell + screen picker
+// Mirrors ios/PhantomApp.swift's AuthManager switch and ios/Core/Navigation/MainTabView.swift
+//
+// Screens are grouped by feature in the picker so presenters can walk the demo
+// without going through real auth. No backend calls. Display-only.
+
+const SCREEN_GROUPS = [
+  { label: 'Auth',       items: [
+    { k: 'auth-login',    l: 'Login' },
+    { k: 'auth-signup',   l: 'Sign up' },
+    { k: 'auth-confirm',  l: 'Confirm code' },
+  ]},
+  { label: 'Onboarding', items: [
+    { k: 'onb-0', l: '1 · Opening' },
+    { k: 'onb-1', l: '2 · Concept' },
+    { k: 'onb-2', l: '3 · Hesitation tax' },
+    { k: 'onb-3', l: '4 · DNA' },
+    { k: 'onb-4', l: '5 · Streak' },
+  ]},
+  { label: 'Main tabs',  items: [
+    { k: 'home',       l: 'Home' },
+    { k: 'dashboard',  l: 'Dashboard' },
+    { k: 'recent',     l: 'Recent ghosts' },
+    { k: 'list',       l: 'Ghost list' },
+    { k: 'dna-filled', l: 'Investor DNA' },
+    { k: 'profile',    l: 'Profile' },
+  ]},
+  { label: 'Log flow',   items: [
+    { k: 'log-start',   l: 'Start log' },
+    { k: 'log-step1',   l: 'Step 1 — what' },
+    { k: 'log-step2',   l: 'Step 2 — why' },
+    { k: 'log-emotion', l: 'Emotion' },
+    { k: 'log-notes',   l: 'Notes' },
+    { k: 'log-done',    l: 'Ghost logged' },
+  ]},
+  { label: 'DNA states', items: [
+    { k: 'dna-empty',     l: 'Empty' },
+    { k: 'dna-forming',   l: 'Forming' },
+    { k: 'dna-filled',    l: 'Filled' },
+    { k: 'dna-archetype', l: 'Archetype' },
+    { k: 'dna-trait',     l: 'Trait detail' },
+  ]},
+  { label: 'Analytics',  items: [
+    { k: 'hesitation-tax', l: 'Hesitation Tax' },
+    { k: 'streak',         l: 'Streak' },
+  ]},
+];
 
 function App() {
-  const [screen, setScreen] = React.useState(() => localStorage.getItem('phantom.screen') || 'splash');
-  const [tab, setTab] = React.useState(() => localStorage.getItem('phantom.tab') || 'home');
-  const [topTab, setTopTab] = React.useState(() => localStorage.getItem('phantom.topTab') || 'home');
-  const [dnaStage, setDnaStage] = React.useState(() => localStorage.getItem('phantom.dnaStage') || 'filled');
-  const [iaVariant, setIaVariant] = React.useState(() => localStorage.getItem('phantom.iaVariant') || 'v1');
+  const [screen, setScreen] = React.useState('home');
+  // Log-flow state carried across steps
+  const [logState, setLogState] = React.useState({
+    ticker: '', direction: '', priceMode: 'current', price: '',
+    qtyUnit: 'shares', qty: '', tags: [], emotion: null, notes: '',
+  });
+  const resetLog = () => setLogState({
+    ticker: '', direction: '', priceMode: 'current', price: '',
+    qtyUnit: 'shares', qty: '', tags: [], emotion: null, notes: '',
+  });
 
-  React.useEffect(() => { localStorage.setItem('phantom.screen', screen); }, [screen]);
-  React.useEffect(() => { localStorage.setItem('phantom.tab', tab); }, [tab]);
-  React.useEffect(() => { localStorage.setItem('phantom.topTab', topTab); }, [topTab]);
-  React.useEffect(() => { localStorage.setItem('phantom.dnaStage', dnaStage); }, [dnaStage]);
-  React.useEffect(() => { localStorage.setItem('phantom.iaVariant', iaVariant); }, [iaVariant]);
+  // Render the active screen
+  let content;
+  switch (screen) {
+    case 'auth-login':   content = <AuthLogin   onSignUp={() => setScreen('auth-signup')} onComplete={() => setScreen('home')}/>; break;
+    case 'auth-signup':  content = <AuthSignUp  onBack={() => setScreen('auth-login')} onConfirm={() => setScreen('auth-confirm')}/>; break;
+    case 'auth-confirm': content = <AuthConfirm onBack={() => setScreen('auth-signup')} onComplete={() => setScreen('onb-0')}/>; break;
 
-  // When switching variants, remap the active tab to something valid in the new variant
-  React.useEffect(() => {
-    if (iaVariant === 'v1') {
-      if (!['home', 'log', 'dna', 'profile'].includes(tab)) setTab('home');
-    } else if (iaVariant === 'A') {
-      if (!['home', 'ghosts', 'insights', 'profile', 'dna-full'].includes(tab)) setTab('home');
-    } else if (iaVariant === 'B') {
-      if (!['home', 'hesitation', 'dna', 'profile'].includes(tab)) setTab('home');
-    }
-  }, [iaVariant]);
-
-  // Toolbar screen list is variant-aware
-  const toolbarByVariant = {
-    v1: [
-      { k: 'splash',       l: '1 · Splash' },
-      { k: 'login',        l: '2 · Login' },
-      { k: 'home',         l: '3 · Home' },
-      { k: 'hesitation',   l: '4 · Hesitation' },
-      { k: 'ghosted',      l: '5 · Ghosted' },
-      { k: 'log-1',        l: '6 · Log (what)' },
-      { k: 'log-2',        l: '7 · Log (why)' },
-      { k: 'log-done',     l: '8 · Logged ✓' },
-      { k: 'dna-empty',    l: '9 · DNA (0 ghosts)' },
-      { k: 'dna-forming',  l: '10 · DNA (forming)' },
-      { k: 'dna-filled',   l: '11 · DNA (filled)' },
-      { k: 'dna-archetype',l: '12 · DNA (archetype)' },
-      { k: 'dna-trait',    l: '13 · DNA (trait)' },
-      { k: 'profile',      l: '14 · Profile' },
-    ],
-    A: [
-      { k: 'splash',     l: '1 · Splash' },
-      { k: 'login',      l: '2 · Login' },
-      { k: 'home',       l: '3 · Home (scrollable)' },
-      { k: 'ghosts',     l: '4 · Ghosts' },
-      { k: 'insights',   l: '5 · Insights' },
-      { k: 'dna-full',   l: '6 · DNA (from Insights)' },
-      { k: 'profile',    l: '7 · Profile' },
-      { k: 'log-1',      l: '8 · Log (what)' },
-      { k: 'log-2',      l: '9 · Log (why)' },
-      { k: 'log-done',   l: '10 · Logged ✓' },
-    ],
-    B: [
-      { k: 'splash',     l: '1 · Splash' },
-      { k: 'login',      l: '2 · Login' },
-      { k: 'home',       l: '3 · Home (dashboard)' },
-      { k: 'hesitation', l: '4 · Hesitation Tax' },
-      { k: 'dna-empty',    l: '5 · DNA (0 ghosts)' },
-      { k: 'dna-forming',  l: '6 · DNA (forming)' },
-      { k: 'dna-filled',   l: '7 · DNA (filled)' },
-      { k: 'dna-archetype',l: '8 · DNA (archetype)' },
-      { k: 'dna-trait',    l: '9 · DNA (trait)' },
-      { k: 'profile',    l: '10 · Profile' },
-      { k: 'log-1',      l: '11 · Log (what)' },
-      { k: 'log-2',      l: '12 · Log (why)' },
-      { k: 'log-done',   l: '13 · Logged ✓' },
-    ],
-  };
-
-  const goMain = (nextTab, nextTop) => {
-    setScreen('main');
-    setTab(nextTab);
-    if (nextTop) setTopTab(nextTop);
-  };
-
-  // When the bottom tab changes from inside the phone
-  const handleBottomTab = (k) => {
-    if (k === 'log') { setScreen('log-1'); return; }
-    setTab(k);
-    setScreen('main');
-  };
-
-  // When a toolbar button is clicked, map to the right screen + tab
-  const handleToolbar = (k) => {
-    switch (k) {
-      case 'splash':     setScreen('splash'); break;
-      case 'login':      setScreen('login'); break;
-      case 'home':
-        setScreen('main'); setTab('home'); setTopTab('home'); break;
-      case 'hesitation':
-        if (iaVariant === 'B') { setScreen('main'); setTab('hesitation'); }
-        else { setScreen('main'); setTab('home'); setTopTab('hesitation'); }
-        break;
-      case 'ghosted':    setScreen('main'); setTab('home'); setTopTab('ghosted'); break;
-      case 'ghosts':     setScreen('main'); setTab('ghosts'); break;
-      case 'insights':   setScreen('main'); setTab('insights'); break;
-      case 'dna-full':   setScreen('main'); setTab('dna-full'); setDnaStage('filled'); break;
-      case 'log-1':      setScreen('log-1'); break;
-      case 'log-2':      setScreen('log-2'); break;
-      case 'log-done':   setScreen('log-done'); break;
-      case 'dna-empty':     setScreen('main'); setTab(iaVariant === 'A' ? 'dna-full' : 'dna'); setDnaStage('empty'); break;
-      case 'dna-forming':   setScreen('main'); setTab(iaVariant === 'A' ? 'dna-full' : 'dna'); setDnaStage('forming'); break;
-      case 'dna-filled':    setScreen('main'); setTab(iaVariant === 'A' ? 'dna-full' : 'dna'); setDnaStage('filled'); break;
-      case 'dna-archetype': setScreen('main'); setTab(iaVariant === 'A' ? 'dna-full' : 'dna'); setDnaStage('archetype'); break;
-      case 'dna-trait':     setScreen('main'); setTab(iaVariant === 'A' ? 'dna-full' : 'dna'); setDnaStage('trait:Deliberation'); break;
-      case 'profile':    setScreen('main'); setTab('profile'); break;
-    }
-  };
-
-  const openLog = () => setScreen('log-1');
-
-  // ── CONTENT DISPATCH ─────────────────────────────────────
-  let inner;
-
-  // Pre-main screens are shared across variants
-  if (screen === 'splash') {
-    inner = <SplashScreen onNext={() => setScreen('login')} />;
-  } else if (screen === 'login') {
-    inner = <LoginScreen onLogin={() => goMain('home', 'home')} onSignup={() => goMain('home', 'home')} />;
-  } else if (screen === 'log-1') {
-    inner = <LogStep1 onNext={() => setScreen('log-2')} onBack={() => goMain('home')} />;
-  } else if (screen === 'log-2') {
-    inner = <LogStep2 onNext={() => setScreen('log-done')} onBack={() => setScreen('log-1')} />;
-  } else if (screen === 'log-done') {
-    inner = <GhostLoggedScreen onDone={() => goMain('home', 'home')} />;
-
-  } else if (screen === 'main' && iaVariant === 'v1') {
-    // ── VARIANT V1: current (top tabs + bottom bar)
-    let content;
-    if (tab === 'home') {
-      let topScreen;
-      if (topTab === 'home') topScreen = <HomeOverview />;
-      else if (topTab === 'hesitation') topScreen = <GhostPerformanceFlow />;
-      else if (topTab === 'ghosted') topScreen = <GhostedAssetsScreen />;
-      else topScreen = <PlaceholderScreen />;
+    case 'onb-0': case 'onb-1': case 'onb-2': case 'onb-3': case 'onb-4': {
+      const step = parseInt(screen.split('-')[1], 10);
       content = (
-        <div style={{ paddingTop: 56, minHeight: '100%' }}>
-          <TopActionBar tab={topTab} onTab={setTopTab} />
-          {topScreen}
-        </div>
+        <OnboardingScreen
+          step={step}
+          onBack={() => setScreen(`onb-${Math.max(0, step - 1)}`)}
+          onNext={() => setScreen(`onb-${Math.min(ONB_STEPS.length - 1, step + 1)}`)}
+          onComplete={() => setScreen('home')}
+          isLast={step === ONB_STEPS.length - 1}
+        />
       );
-    } else if (tab === 'dna') {
-      content = (
-        <div style={{ paddingTop: 56 }}>
-          <InvestorDNAFlow stage={dnaStage} setStage={setDnaStage} openLog={openLog} />
-        </div>
-      );
-    } else if (tab === 'profile') {
-      content = <div style={{ paddingTop: 56 }}><ProfileScreen onSignOut={() => setScreen('splash')} /></div>;
-    } else {
-      content = <div style={{ paddingTop: 56 }}><HomeOverview /></div>;
+      break;
     }
-    inner = (
-      <div style={{ position: 'relative', height: '100%', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0, overflowY: 'auto', paddingBottom: 92 }}>
-          {content}
-        </div>
-        <BottomTabBar tab={tab} onTab={handleBottomTab} />
-      </div>
-    );
 
-  } else if (screen === 'main' && iaVariant === 'A') {
-    inner = <VariantA tab={tab} setTab={setTab} openLog={openLog} dnaStage={dnaStage} setDnaStage={setDnaStage} />;
+    case 'home':      content = <HomeView onOpenHesitationTax={() => setScreen('hesitation-tax')} onOpenLogging={() => setScreen('log-start')}/>; break;
+    case 'dashboard': content = <DashboardView onOpenLogging={() => setScreen('log-start')}/>; break;
+    case 'recent':    content = <RecentGhostsView/>; break;
+    case 'list':      content = <GhostListView/>; break;
+    case 'profile':   content = <ProfileView onSignOut={() => setScreen('auth-login')}/>; break;
 
-  } else if (screen === 'main' && iaVariant === 'B') {
-    inner = <VariantB tab={tab} setTab={setTab} openLog={openLog} dnaStage={dnaStage} setDnaStage={setDnaStage} />;
+    case 'log-start':   content = <StartLogView   onStart={() => { resetLog(); setScreen('log-step1'); }} onBack={() => setScreen('home')}/>; break;
+    case 'log-step1':   content = <LogStep1       onBack={() => setScreen('log-start')} onNext={() => setScreen('log-step2')} state={logState} setState={setLogState}/>; break;
+    case 'log-step2':   content = <LogStep2       onBack={() => setScreen('log-step1')} onNext={() => setScreen('log-emotion')} state={logState} setState={setLogState}/>; break;
+    case 'log-emotion': content = <LogEmotion     onBack={() => setScreen('log-step2')} onNext={() => setScreen('log-notes')} state={logState} setState={setLogState}/>; break;
+    case 'log-notes':   content = <LogNotes       onBack={() => setScreen('log-emotion')} onNext={() => setScreen('log-done')} state={logState} setState={setLogState}/>; break;
+    case 'log-done':    content = <GhostLoggedView state={logState} onDone={() => setScreen('home')}/>; break;
 
-  } else {
-    inner = <div style={{ paddingTop: 56 }}><HomeOverview /></div>;
+    case 'dna-empty':     content = <DNAEmpty     onOpenLogging={() => setScreen('log-start')} onBack={() => setScreen('home')}/>; break;
+    case 'dna-forming':   content = <DNAForming   count={3} total={7} onBack={() => setScreen('home')}/>; break;
+    case 'dna-filled':    content = <DNAFilled    onOpenArchetype={() => setScreen('dna-archetype')} onOpenTrait={() => setScreen('dna-trait')} onBack={() => setScreen('home')}/>; break;
+    case 'dna-archetype': content = <DNAArchetype onBack={() => setScreen('dna-filled')} onOpenTrait={() => setScreen('dna-trait')}/>; break;
+    case 'dna-trait':     content = <DNATrait     onBack={() => setScreen('dna-archetype')}/>; break;
+
+    case 'hesitation-tax': content = <HesitationTaxView onBack={() => setScreen('home')}/>; break;
+    case 'streak':         content = <StreakView        onBack={() => setScreen('home')}/>; break;
+
+    default: content = <HomeView/>;
   }
 
-  const toolbar = toolbarByVariant[iaVariant];
-
-  const isEmbed = typeof window !== 'undefined' && /[?&]embed(=|&|$)/.test(window.location.search);
-
-  if (isEmbed || true) {
-    // Compare-view: just the phone, no variant switcher or screen picker.
-    return (
-      <IOSDevice>
-        {inner}
-      </IOSDevice>
-    );
-  }
+  // Only show tab bar on the 5 "signed-in" main-tab screens
+  const mainTabScreens = ['home', 'dashboard', 'list', 'dna-filled', 'profile'];
+  const showTabBar = mainTabScreens.includes(screen);
 
   return (
     <React.Fragment>
-      <VariantSwitcher value={iaVariant} onChange={setIaVariant} />
-      <Toolbar items={toolbar} active={currentToolbarKey(screen, tab, topTab, dnaStage, iaVariant)} onPick={handleToolbar} />
-      <div style={{ marginTop: 12 }}>
-        <IOSDevice>
-          {inner}
+      <ScreenPicker current={screen} setScreen={setScreen}/>
+      <div id="phantom-device" style={{ marginTop: 8 }}>
+        <IOSDevice width={402} height={874}>
+          <div style={{ position: 'relative', height: '100%', overflow: 'hidden' }}>
+            <div style={{ height: '100%', overflowY: 'auto' }}>
+              {content}
+            </div>
+            {showTabBar && <TabBar active={screen} setScreen={setScreen}/>}
+          </div>
         </IOSDevice>
       </div>
     </React.Fragment>
   );
 }
 
-function currentToolbarKey(screen, tab, topTab, dnaStage, iaVariant) {
-  if (screen === 'splash') return 'splash';
-  if (screen === 'login') return 'login';
-  if (screen === 'log-1') return 'log-1';
-  if (screen === 'log-2') return 'log-2';
-  if (screen === 'log-done') return 'log-done';
-
-  const dnaKey = () => {
-    if (dnaStage === 'empty')     return 'dna-empty';
-    if (dnaStage === 'forming')   return 'dna-forming';
-    if (dnaStage === 'archetype') return 'dna-archetype';
-    if (dnaStage && dnaStage.startsWith('trait:')) return 'dna-trait';
-    return 'dna-filled';
-  };
-
-  if (iaVariant === 'v1') {
-    if (tab === 'dna') return dnaKey();
-    if (tab === 'profile') return 'profile';
-    if (tab === 'home') {
-      if (topTab === 'hesitation') return 'hesitation';
-      if (topTab === 'ghosted') return 'ghosted';
-      return 'home';
-    }
-    return 'home';
-  }
-  if (iaVariant === 'A') {
-    if (tab === 'dna-full') return dnaKey() === 'dna-filled' ? 'dna-full' : dnaKey();
-    if (tab === 'ghosts') return 'ghosts';
-    if (tab === 'insights') return 'insights';
-    if (tab === 'profile') return 'profile';
-    return 'home';
-  }
-  if (iaVariant === 'B') {
-    if (tab === 'dna') return dnaKey();
-    if (tab === 'hesitation') return 'hesitation';
-    if (tab === 'profile') return 'profile';
-    return 'home';
-  }
-  return 'home';
-}
-
-function VariantSwitcher({ value, onChange }) {
-  const opts = [
-    { k: 'v1', label: 'v1 — Current', sub: 'Top tabs + bottom bar' },
-    { k: 'A',  label: 'A — Scrollable Home', sub: 'Home · Ghosts · Insights · Profile' },
-    { k: 'B',  label: 'B — Headline + FAB', sub: 'Home · Tax · DNA · Profile · ⊕' },
+function TabBar({ active, setScreen }) {
+  const tabs = [
+    { k: 'home',       l: 'Home',    icon: 'home' },
+    { k: 'list',       l: 'Ghosts',  icon: 'book' },
+    { k: 'dashboard',  l: '',        icon: 'plus', fab: true },
+    { k: 'dna-filled', l: 'DNA',     icon: 'atom' },
+    { k: 'profile',    l: 'Profile', icon: 'person' },
   ];
   return (
     <div style={{
-      display: 'flex', gap: 8, padding: '0 4px 10px', flexWrap: 'wrap',
-      borderBottom: '1px solid rgba(0,0,0,0.08)', marginBottom: 10,
+      position: 'absolute', bottom: 0, left: 0, right: 0,
+      paddingBottom: 34,
+      background: 'rgba(255,255,255,0.88)',
+      backdropFilter: 'blur(20px) saturate(180%)',
+      WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+      borderTop: `1px solid ${PHANTOM.separator}`,
+      zIndex: 20,
     }}>
       <div style={{
-        fontSize: 11, fontWeight: 600, color: '#666', letterSpacing: 0.5,
-        textTransform: 'uppercase', alignSelf: 'center', marginRight: 4,
-      }}>IA Variant</div>
-      {opts.map(o => {
-        const sel = value === o.k;
-        return (
-          <button key={o.k} onClick={() => onChange(o.k)} style={{
-            padding: '8px 12px', borderRadius: 10,
-            border: `1px solid ${sel ? '#3803B1' : 'rgba(0,0,0,0.12)'}`,
-            background: sel ? '#3803B1' : 'white',
-            color: sel ? 'white' : '#222',
-            cursor: 'pointer',
-            fontFamily: '-apple-system, BlinkMacSystemFont, system-ui, sans-serif',
-            textAlign: 'left',
-            lineHeight: 1.2,
-          }}>
-            <div style={{ fontSize: 13, fontWeight: 600 }}>{o.label}</div>
-            <div style={{ fontSize: 10, opacity: 0.8, marginTop: 2 }}>{o.sub}</div>
-          </button>
-        );
-      })}
+        display: 'flex', justifyContent: 'space-around', alignItems: 'center',
+        padding: '10px 0 4px',
+      }}>
+        {tabs.map(t => {
+          const isActive = (t.k === active) || (t.fab && active === 'dashboard');
+          if (t.fab) {
+            return (
+              <button key={t.k} onClick={() => setScreen(t.k)} style={{
+                width: 52, height: 52, borderRadius: '50%', border: 'none',
+                background: `linear-gradient(135deg, ${PHANTOM.purple}, ${PHANTOM.purpleGrad})`,
+                color: PHANTOM.white, cursor: 'pointer',
+                boxShadow: '0 8px 20px rgba(56,3,177,0.35)',
+                fontFamily: TYPE.family, fontSize: 28, fontWeight: 300,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transform: 'translateY(-10px)',
+              }}>+</button>
+            );
+          }
+          return (
+            <button key={t.k} onClick={() => setScreen(t.k)} style={{
+              flex: 1, background: 'transparent', border: 'none', cursor: 'pointer',
+              padding: '6px 0',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+              color: isActive ? PHANTOM.purple : PHANTOM.lightGray,
+              fontFamily: TYPE.family, fontSize: 10, fontWeight: 600,
+            }}>
+              <TabIcon kind={t.icon} color={isActive ? PHANTOM.purple : PHANTOM.lightGray}/>
+              <span>{t.l}</span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
 
-function Toolbar({ items, active, onPick }) {
+function TabIcon({ kind, color }) {
+  const paths = {
+    home:   <path d="M3 11l9-8 9 8v10a1 1 0 01-1 1h-5v-7H9v7H4a1 1 0 01-1-1z" stroke={color} strokeWidth="1.6" fill="none" strokeLinejoin="round"/>,
+    book:   <React.Fragment><path d="M4 4a2 2 0 012-2h13v18H6a2 2 0 00-2 2" stroke={color} strokeWidth="1.6" fill="none"/><path d="M4 4v18" stroke={color} strokeWidth="1.6"/></React.Fragment>,
+    atom:   <React.Fragment><circle cx="12" cy="12" r="2.2" fill={color}/><ellipse cx="12" cy="12" rx="10" ry="4" stroke={color} strokeWidth="1.5" fill="none"/><ellipse cx="12" cy="12" rx="10" ry="4" stroke={color} strokeWidth="1.5" fill="none" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" stroke={color} strokeWidth="1.5" fill="none" transform="rotate(-60 12 12)"/></React.Fragment>,
+    person: <React.Fragment><circle cx="12" cy="12" r="10" stroke={color} strokeWidth="1.6" fill="none"/><circle cx="12" cy="10" r="3" stroke={color} strokeWidth="1.6" fill="none"/><path d="M6 19c1.5-3 4-4 6-4s4.5 1 6 4" stroke={color} strokeWidth="1.6" fill="none" strokeLinecap="round"/></React.Fragment>,
+  };
+  return <svg width="22" height="22" viewBox="0 0 24 24">{paths[kind]}</svg>;
+}
+
+function ScreenPicker({ current, setScreen }) {
   return (
-    <div className="toolbar">
-      {items.map(it => (
-        <button key={it.k} onClick={() => onPick(it.k)}
-          className={active === it.k ? 'active' : ''}>
-          {it.l}
-        </button>
+    <div id="picker-bar" style={{
+      display: 'flex', flexWrap: 'wrap', gap: 6,
+      padding: 8,
+      background: 'rgba(255,255,255,0.7)',
+      backdropFilter: 'blur(16px)',
+      WebkitBackdropFilter: 'blur(16px)',
+      border: '1px solid rgba(0,0,0,0.06)',
+      borderRadius: 16,
+      maxWidth: 720,
+      justifyContent: 'center',
+      boxShadow: '0 8px 30px rgba(60,3,177,0.08)',
+      fontFamily: TYPE.family,
+    }}>
+      {SCREEN_GROUPS.map((g, gi) => (
+        <React.Fragment key={g.label}>
+          {gi > 0 && <div style={{ width: 1, height: 20, background: 'rgba(0,0,0,0.08)', alignSelf: 'center', margin: '0 2px' }}/>}
+          <span style={{
+            fontSize: 10, fontWeight: 600, color: '#8a8a96',
+            textTransform: 'uppercase', letterSpacing: 0.6,
+            alignSelf: 'center', padding: '0 6px 0 10px',
+          }}>{g.label}</span>
+          {g.items.map(it => {
+            const active = current === it.k;
+            return (
+              <button
+                key={it.k}
+                onClick={() => setScreen(it.k)}
+                style={{
+                  font: 'inherit', fontSize: 11.5, fontWeight: 500,
+                  padding: '7px 10px', borderRadius: 9,
+                  border: '1px solid transparent',
+                  background: active ? PHANTOM.purple : 'transparent',
+                  color: active ? '#fff' : '#3c3c4b',
+                  cursor: 'pointer',
+                  boxShadow: active ? '0 2px 8px rgba(56,3,177,0.3)' : 'none',
+                  transition: 'all 0.15s',
+                }}
+              >{it.l}</button>
+            );
+          })}
+        </React.Fragment>
       ))}
     </div>
   );
 }
 
-ReactDOM.createRoot(document.getElementById('device-root')).render(<App />);
+// ─────────────────────────────────────────────────────────────
+// Mount
+// ─────────────────────────────────────────────────────────────
+ReactDOM.createRoot(document.getElementById('device-root')).render(React.createElement(App));
