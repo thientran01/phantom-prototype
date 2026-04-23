@@ -228,38 +228,8 @@ export function V2DesignSystemPanel() {
             sub="Log a ghost"
           />
         </div>
-        <div style={{ fontSize: 11, color: V2.ink55, marginTop: 4, lineHeight: 1.5 }}>
-          Serif italic headline · one paragraph · one CTA. No illustrations, no cards.
-        </div>
       </Section>
 
-      <Section label="Principles">
-        <ol style={{
-          margin: 0, paddingLeft: 0, listStyle: 'none',
-          display: 'flex', flexDirection: 'column', gap: 10,
-        }}>
-          {[
-            'One color story: warm paper, deep ink.',
-            'Serif italic for human moments. Sans and mono for data.',
-            'Hairlines, not borders. No stacked drop-shadows.',
-            'Prefer type hierarchy to boxes. Cards earn their edges.',
-            'Mono is for things the market writes. Italic is for things you write.',
-          ].map((p, i) => (
-            <li key={i} style={{
-              display: 'flex', gap: 10, alignItems: 'baseline',
-            }}>
-              <span style={{
-                fontFamily: V2_FONT.mono, fontSize: 10, color: V2.ink35,
-                minWidth: 18, letterSpacing: '0.04em',
-              }}>0{i + 1}</span>
-              <span style={{
-                fontFamily: V2_FONT.display, fontSize: 14, lineHeight: 1.5,
-                color: V2.ink70,
-              }}>{p}</span>
-            </li>
-          ))}
-        </ol>
-      </Section>
     </aside>
   );
 }

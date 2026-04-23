@@ -156,12 +156,6 @@ export function V2Today({
         <LedgerRow left="Your DNA" right="Watchman · DGRS" onClick={onOpenDNA}/>
         <V2Rule />
       </div>
-
-      <div style={{ marginTop: 8 }}>
-        <V2Button variant="primary" full onClick={onCompose}>
-          Log a ghost
-        </V2Button>
-      </div>
     </div>
   );
 }
