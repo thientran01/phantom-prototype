@@ -22,23 +22,19 @@ export function V2DesignSystemPanel() {
         <div style={{
           fontFamily: V2_FONT.display, fontStyle: 'italic',
           fontSize: 26, color: V2.ink, letterSpacing: '-0.01em', lineHeight: 1.15,
-        }}>Phantom v2 — editorial journal</div>
-        <p style={{
-          fontFamily: V2_FONT.display, fontSize: 14, lineHeight: 1.55,
-          color: V2.ink70, margin: 0, textWrap: 'pretty',
-        }}>
-          Serif italic for stuff users do. Sans and mono for data.
-        </p>
+        }}>Phantom</div>
         <a href="/compare.html" style={{
-          fontFamily: V2_FONT.sans, fontSize: 12,
-          color: V2.ink55, textDecoration: 'none',
-          letterSpacing: '-0.005em',
-          marginTop: 4,
+          fontFamily: V2_FONT.sans, fontSize: 13,
+          fontWeight: 600,
+          color: V2.ink, textDecoration: 'none',
+          letterSpacing: '-0.01em',
+          marginTop: 6,
           display: 'inline-flex', alignItems: 'center', gap: 6,
           alignSelf: 'flex-start',
-          padding: '6px 10px',
+          padding: '8px 14px',
           borderRadius: 999,
-          border: `1px solid ${V2.rule}`,
+          background: V2.ink,
+          color: V2.paper,
         }}>Compare MVP ↗</a>
       </header>
 
@@ -178,9 +174,6 @@ export function V2DesignSystemPanel() {
               }}>{m}</span>
             </div>
           ))}
-        </div>
-        <div style={{ fontSize: 12, color: V2.ink55, marginTop: 4, lineHeight: 1.5 }}>
-          Hairline silhouette, faceless. Ember by default. Quiet sits in corners, waiting rides the "a ghost is ready" card, tender reads on confession beats, hero anchors the cover.
         </div>
       </Section>
 

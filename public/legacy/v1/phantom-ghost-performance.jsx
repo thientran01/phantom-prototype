@@ -216,88 +216,154 @@ function HeroSparkline() {
   );
 }
 
-function GhostPerformanceScreen({ onOpenPattern }) {
-  const [range, setRange] = React.useState('24H');
-  const [patternFilter, setPatternFilter] = React.useState('All Patterns');
+/* ──────────────────────────────────────────────────────────────
+   Hesitation Tax — mirrors Figma "Hesitation Tax Page 1" (node 221:10)
+   Title + subtitle, ticker search, two comparison cards, two info bullets.
+   ────────────────────────────────────────────────────────────── */
+function HT_SearchIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <circle cx="7" cy="7" r="5" stroke="rgba(0,0,0,0.67)" strokeWidth="1.3"/>
+      <path d="M11 11l4 4" stroke="rgba(0,0,0,0.67)" strokeWidth="1.3" strokeLinecap="round"/>
+    </svg>
+  );
+}
+function HT_InfoIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" stroke="black" strokeWidth="1.5"/>
+      <path d="M12 8v5M12 16h.01" stroke="black" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  );
+}
+function HT_ClockIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" stroke="black" strokeWidth="1.5"/>
+      <path d="M12 7v5l3 2" stroke="black" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+function HT_TrendUp() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M3 17l6-6 4 4 8-8" stroke="black" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M15 7h6v6" stroke="black" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+function HT_TrendDown() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M3 7l6 6 4-4 8 8" stroke="black" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M15 17h6v-6" stroke="black" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
+function HT_CompareCard({ bg, label, value, subtitle, icon }) {
+  return (
+    <div style={{
+      flex: 1, minWidth: 0,
+      background: bg, border: '1px solid black', borderRadius: 24,
+      padding: '12px 14px 14px',
+      display: 'flex', flexDirection: 'column', gap: 6,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        {icon}
+        <span style={{ fontSize: 12, color: 'black', lineHeight: 1 }}>{label}</span>
+      </div>
+      <div style={{ fontSize: 15, color: 'black', lineHeight: 1.1, marginTop: 2 }}>{value}</div>
+      <div style={{ fontSize: 10, color: 'black', lineHeight: 1 }}>{subtitle}</div>
+    </div>
+  );
+}
+
+function HT_InfoBlock({ icon, title, body }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        {icon}
+        <span style={{ fontSize: 15, color: 'black', lineHeight: 1 }}>{title}</span>
+      </div>
+      <ul style={{
+        margin: 0, paddingLeft: 32,
+        fontSize: 13, fontWeight: 300, color: 'black', lineHeight: 1.5,
+      }}>
+        <li>{body}</li>
+      </ul>
+    </div>
+  );
+}
+
+function GhostPerformanceScreen() {
+  const [query, setQuery] = React.useState('');
 
   return (
     <div style={{
-      background: GP.bg, padding: '16px 20px 32px',
-      display: 'flex', flexDirection: 'column', gap: 20, fontFamily: phFont,
+      background: 'white', padding: '12px 20px 32px',
+      display: 'flex', flexDirection: 'column', gap: 16,
+      fontFamily: phFont,
     }}>
-      {/* Header */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <div style={{ fontSize: 28, fontWeight: 700, color: GP.text, lineHeight: 1 }}>Ghost Performance</div>
-        <div style={{ fontSize: 15, color: GP.mute, lineHeight: 1 }}>Based on 23 ghost trades</div>
+      {/* Title + subtitle */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div style={{ fontSize: 22, color: 'black', lineHeight: 1 }}>Hesitation Tax</div>
+        <div style={{ fontSize: 15, fontWeight: 300, color: 'black', lineHeight: 1.3 }}>
+          See how hesitation has impacted your<br/>performance over time
+        </div>
       </div>
 
-      {/* Time filters */}
-      <div style={{ display: 'flex', gap: 8 }}>
-        {['24H', '1W', '1M', '1Y'].map(r => (
-          <FilterButton key={r} active={range === r} onClick={() => setRange(r)}>{r}</FilterButton>
-        ))}
-      </div>
-
-      {/* HERO Hesitation Tax Card — full-bleed, warm, confident */}
+      {/* Ticker search */}
       <div style={{
-        borderRadius: 24,
-        background: 'linear-gradient(180deg, rgb(227,252,239) 0%, rgb(239,252,245) 100%)',
-        padding: '24px 24px 20px',
-        display: 'flex', flexDirection: 'column', gap: 14,
+        display: 'flex', alignItems: 'center', gap: 10,
+        border: '1px solid black', borderRadius: 24,
+        padding: '12px 16px',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{
-            fontSize: 11, fontWeight: 600, letterSpacing: '0.12em',
-            color: GP.green, opacity: 0.8,
-          }}>HESITATION TAX</div>
-          <div style={{
-            fontSize: 12, fontWeight: 600, color: GP.green,
-            background: 'rgba(34,160,107,0.12)',
-            padding: '4px 10px', borderRadius: 100, lineHeight: 1,
-          }}>↑ 12%</div>
-        </div>
-        <div style={{
-          fontSize: 56, fontWeight: 700, color: GP.green,
-          lineHeight: 1, letterSpacing: '-0.02em',
-        }}>+$2,847</div>
-        <div style={{ fontSize: 14, color: 'rgb(72,120,95)', lineHeight: 1.3 }}>
-          Net gain from trades you didn't take this month
-        </div>
-        <div style={{ margin: '4px -4px 0' }}>
-          <HeroSparkline />
-        </div>
-        <div style={{
-          display: 'flex', justifyContent: 'space-between',
-          paddingTop: 14, borderTop: '1px solid rgba(34,160,107,0.15)',
-        }}>
-          <StatMini value="$1,203" label="Protected" valueColor={GP.green}/>
-          <StatMini value="$4,050" label="Missed"    valueColor="rgb(72,120,95)"/>
-          <StatMini value="65%"    label="Win Rate"  valueColor={GP.text}/>
-        </div>
+        <HT_SearchIcon/>
+        <input
+          placeholder="SEARCH TICKER (E.G. NVDA)"
+          value={query}
+          onChange={e => setQuery(e.target.value.toUpperCase())}
+          style={{
+            flex: 1, border: 'none', outline: 'none', background: 'transparent',
+            fontFamily: 'inherit', fontSize: 14,
+            color: query ? 'black' : 'rgba(0,0,0,0.67)',
+            letterSpacing: 0.3,
+          }}
+        />
       </div>
 
-      {/* Patterns section — the real product */}
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 4 }}>
-        <div style={{ fontSize: 20, fontWeight: 700, color: GP.text }}>Patterns</div>
-        <div style={{ fontSize: 13, color: GP.mute }}>4 detected</div>
-      </div>
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        {['All Patterns', 'Protected', 'Growth'].map(c => (
-          <PatternChipFilter key={c} active={patternFilter === c} onClick={() => setPatternFilter(c)}>
-            {c}
-          </PatternChipFilter>
-        ))}
+      {/* Comparison cards */}
+      <div style={{ display: 'flex', gap: 16, marginTop: 90 }}>
+        <HT_CompareCard
+          bg="#C5FFC5"
+          label="If You Had Invested"
+          value="$14,956.20"
+          subtitle="Gain: $4,401.35 (44.2%)"
+          icon={<HT_TrendUp/>}
+        />
+        <HT_CompareCard
+          bg="#FFC8C8"
+          label="Your Hesitation"
+          value="$1,002.50"
+          subtitle="Loss: $4,401.35 (44.2%)"
+          icon={<HT_TrendDown/>}
+        />
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {GP_PATTERNS.map(p => (
-          <PatternRow key={p.key}
-            pattern={p.pattern} count={p.count} desc={p.desc}
-            value={p.value} valueColor={p.valueColor}
-            onTap={() => onOpenPattern(p.key)}
-          />
-        ))}
-      </div>
+      {/* Your Hesitation Tax */}
+      <HT_InfoBlock
+        icon={<HT_InfoIcon/>}
+        title="Your Hesitation Tax"
+        body={`By not taking action on AAPL, you've paid a hesitation tax of $3,589.26 (35.9% potential return). This represents the opportunity cost of delaying or avoiding your investment decision.`}
+      />
+
+      {/* Your Common Hesitation Triggers */}
+      <HT_InfoBlock
+        icon={<HT_ClockIcon/>}
+        title="Your Common Hesitation Triggers"
+        body={`Fear of buying at the wrong time, waiting for a "better" entry point, analysis paralysis, and emotional decision-making all contribute to hesitation. The market rewards action over perfection.`}
+      />
     </div>
   );
 }
@@ -489,11 +555,10 @@ Object.assign(window, { GhostPerformanceScreen, PatternDetailScreen });
    (drop-in replacement for <HesitationTaxScreen />)
    ────────────────────────────────────────────────────────────── */
 function GhostPerformanceFlow() {
-  const [patternKey, setPatternKey] = React.useState(null);
-  if (patternKey) {
-    return <PatternDetailScreen patternKey={patternKey} onClose={() => setPatternKey(null)} />;
-  }
-  return <GhostPerformanceScreen onOpenPattern={setPatternKey} />;
+  // Simplified — the screen no longer drills into per-pattern detail.
+  // PatternDetailScreen is kept in this file for reference but is no longer
+  // reachable from the UI. Remove it once we're sure we won't want it back.
+  return <GhostPerformanceScreen />;
 }
 
 Object.assign(window, { GhostPerformanceFlow });
